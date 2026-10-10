@@ -69,3 +69,78 @@ def test_create_round_returns_created_status(client, monkeypatch):
     assert response.status_code == 201
     assert response.json() == {"id": "round-1", "status": "created"}
     ingest.assert_awaited_once()
+
+
+def sighting_payload(**overrides):
+    payload = {
+        "id": "sighting-1",
+        "participantId": "P01",
+        "objectLabel": "blue mug",
+        "utterance": "where's my mug",
+        "seenAt": "2026-10-10T18:20:41Z",
+        "x": 0.25,
+        "y": -0.25,
+        "z": -0.55,
+        "placement": "lidarDepth",
+        "confidence": 0.92,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_create_sighting_returns_created_status(client, monkeypatch):
+    monkeypatch.setattr(database_client, "sighting_exists", AsyncMock(return_value=False))
+    ingest = AsyncMock()
+    monkeypatch.setattr(database_client, "ingest_sighting", ingest)
+
+    response = client.post(
+        "/api/sightings",
+        json=sighting_payload(),
+        headers={"x-echora-token": "test-token"},
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {"id": "sighting-1", "status": "created"}
+    ingest.assert_awaited_once()
+    row = ingest.await_args.args[0]
+    assert row["utterance"] == "where's my mug"
+    assert row["placement"] == "lidarDepth"
+
+
+def test_create_sighting_is_idempotent(client, monkeypatch):
+    monkeypatch.setattr(database_client, "sighting_exists", AsyncMock(return_value=True))
+    ingest = AsyncMock()
+    monkeypatch.setattr(database_client, "ingest_sighting", ingest)
+
+    response = client.post(
+        "/api/sightings",
+        json=sighting_payload(),
+        headers={"x-echora-token": "test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"id": "sighting-1", "status": "exists"}
+    ingest.assert_not_awaited()
+
+
+def test_create_sighting_rejects_bad_token(client):
+    response = client.post(
+        "/api/sightings",
+        json=sighting_payload(),
+        headers={"x-echora-token": "wrong-token"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_list_sightings_returns_newest_first(client, monkeypatch):
+    rows = [
+        sighting_payload(id="new", seenAt="2026-10-10T18:25:00Z"),
+        sighting_payload(id="old", seenAt="2026-10-10T18:20:00Z"),
+    ]
+    monkeypatch.setattr(database_client, "list_sightings", AsyncMock(return_value=rows))
+
+    response = client.get("/api/sightings?limit=20")
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == ["new", "old"]
