@@ -25,4 +25,5 @@ async def main():
         detail = str(exc) or type(exc).__name__
         raise RuntimeError(f"Connection failed: {detail}") from exc
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
