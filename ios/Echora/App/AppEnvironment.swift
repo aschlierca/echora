@@ -83,6 +83,8 @@ final class AppEnvironment {
     let audio: SpatialAudioRendering
     let voice: VoiceCommandListening
     let telemetry: TelemetryReporting
+    /// Pre-recorded voice lines (CONTRACT 4.11). Mock (logs only) until Seoyeon's player lands.
+    let voicePrompts: VoicePromptPlaying
 
     init(
         perception: PerceptionService,
@@ -90,7 +92,8 @@ final class AppEnvironment {
         headTracker: HeadTracking,
         audio: SpatialAudioRendering,
         voice: VoiceCommandListening,
-        telemetry: TelemetryReporting
+        telemetry: TelemetryReporting,
+        voicePrompts: VoicePromptPlaying = MockVoicePromptPlayer()
     ) {
         self.perception = perception
         self.locator = locator
@@ -98,6 +101,7 @@ final class AppEnvironment {
         self.audio = audio
         self.voice = voice
         self.telemetry = telemetry
+        self.voicePrompts = voicePrompts
     }
 
     /// Picks real or mock per flag. Until a real implementation exists, its flag is forced to mock.
