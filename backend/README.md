@@ -7,6 +7,36 @@ Not implemented yet. Moon builds this; the contract below is copied from
 
 > **v1.5 (search trajectories):** the app can now upload per-round `RoundSample`s via `POST /api/rounds/{id}/samples`. Endpoint, JSON and storage plan are in `docs/CONTRACT.md` Part 5 and 4.8, which win over this copy.
 
+## Run the tests
+
+The test suite uses mocked database access and does not require a Tiger
+connection or a `DATABASE_URL`.
+
+From the repository root:
+
+```sh
+cd backend
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt pytest-asyncio
+python -m pytest -q
+```
+
+To run one test file or test by name:
+
+```sh
+python -m pytest tests/test_main.py -q
+python -m pytest -k stats -q
+```
+
+The optional `test_db.py` script checks a real PostgreSQL connection. It loads
+`backend/.env`, so set `DATABASE_URL` there or in the environment before
+running it:
+
+```sh
+python test_db.py
+```
+
 ### 4.8 Moon: Backend (`backend/`)
 See Part 5. FastAPI + **Tiger Data** (Tiger Cloud: hosted PostgreSQL with TimescaleDB). Deploy the API to a public host (Render, Railway, or Fly) so venue Wi-Fi client isolation can't break phone-to-laptop traffic. Fallback: run on a laptop behind a Cloudflare tunnel.
 
