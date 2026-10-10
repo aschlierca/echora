@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import CORS_ORIGIN, ECHORA_BACKEND_TOKEN
 from app.tiger_client import TigerClient
-from app.models import RoundResult, StudyStats, RoundSample
+from app.models import RoundResult, StudyStats, RoundSample, ObjectSighting
 from typing import List
 
 app = FastAPI(title="Echora Backend", version="0.1.0")
@@ -116,4 +116,33 @@ async def create_samples(round_id: str, samples: List[RoundSample], x_echora_tok
 @app.get("/api/rounds/{round_id}/samples")
 async def get_samples(round_id: str):
     rows = await client.list_samples(round_id)
+    return rows
+
+@app.post("/api/sightings")
+async def create_sighting(sighting: ObjectSighting, x_echora_token: str = Header(...)):
+    _check_token(x_echora_token)
+    exists = await client.sighting_exists(sighting.id)
+    if exists:
+        return {"id": sighting.id, "status": "exists"}
+    row = {
+        "id": sighting.id,
+        "participantId": sighting.participantId,
+        "objectLabel": sighting.objectLabel,
+        "utterance": sighting.utterance,
+        "seenAt": sighting.seenAt,
+        "x": sighting.x,
+        "y": sighting.y,
+        "z": sighting.z,
+        "placement": sighting.placement.value,
+        "confidence": sighting.confidence,
+    }
+    await client.ingest_sighting(row)
+    return JSONResponse(
+        content={"id": sighting.id, "status": "created"},
+        status_code=status.HTTP_201_CREATED,
+    )
+
+@app.get("/api/sightings")
+async def list_sightings(limit: int = Query(20, ge=1, le=100)):
+    rows = await client.list_sightings(limit=limit)
     return rows

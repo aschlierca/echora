@@ -84,6 +84,22 @@ final class TelemetryClient: TelemetryReporting {
         queuePending(samples, roundId: roundId.uuidString)
     }
 
+    /// v2.3 "Echora remembers": best effort, one try, no queue. Sightings only
+    /// feed the dashboard's "Last seen" panel; the app's memory is local.
+    func reportSighting(_ sighting: ObjectSighting) async {
+        guard !token.isEmpty else { return }
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/sightings"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(token, forHTTPHeaderField: "X-Echora-Token")
+        do {
+            request.httpBody = try encoder.encode(sighting)
+            _ = try await URLSession.shared.data(for: request)
+        } catch {
+            print("Unable to report sighting: \(error)")
+        }
+    }
+
     private func queuePending(_ result: RoundResult) {
         do {
             let data = try encoder.encode(result)

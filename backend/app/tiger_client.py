@@ -129,6 +129,29 @@ class TigerClient:
                 """)
             except Exception:
                 pass
+            # sightings table (v2.3 "Echora remembers"): timeline of where
+            # objects were seen, for the dashboard's "Last seen" panel.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS public.sightings (
+                    id UUID NOT NULL,
+                    "participantId" TEXT,
+                    "objectLabel" TEXT,
+                    utterance TEXT,
+                    "seenAt" TIMESTAMPTZ NOT NULL,
+                    x DOUBLE PRECISION,
+                    y DOUBLE PRECISION,
+                    z DOUBLE PRECISION,
+                    placement TEXT,
+                    confidence DOUBLE PRECISION,
+                    CONSTRAINT sightings_id_seenat_key UNIQUE (id, "seenAt")
+                );
+            """)
+            try:
+                await conn.execute("""
+                    SELECT create_hypertable('public','sightings','seenAt', if_not_exists => TRUE);
+                """)
+            except Exception:
+                pass
 
     async def exists(self, row_id: str) -> bool:
         pool = await self._get_pool()
@@ -207,4 +230,36 @@ class TigerClient:
                 WHERE "roundId" = $1
                 ORDER BY "secondsSinceStart" ASC
             """, round_id)
+            return [dict(r) for r in rows]
+
+    async def sighting_exists(self, sighting_id: str) -> bool:
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT 1 FROM public.sightings WHERE id = $1 LIMIT 1", sighting_id)
+            return row is not None
+
+    async def ingest_sighting(self, row: dict) -> None:
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO public.sightings (
+                    id, "participantId", "objectLabel", utterance, "seenAt",
+                    x, y, z, placement, confidence
+                ) VALUES (
+                    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+                ) ON CONFLICT (id, "seenAt") DO NOTHING
+            """, row["id"], row["participantId"], row["objectLabel"], row["utterance"],
+                row["seenAt"], row["x"], row["y"], row["z"],
+                row["placement"], row["confidence"])
+
+    async def list_sightings(self, limit: int = 20) -> list[dict]:
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT id, "participantId", "objectLabel", utterance, "seenAt",
+                       x, y, z, placement, confidence
+                FROM public.sightings
+                ORDER BY "seenAt" DESC
+                LIMIT $1
+            """, limit)
             return [dict(r) for r in rows]

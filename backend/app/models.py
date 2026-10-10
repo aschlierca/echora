@@ -40,3 +40,15 @@ class RoundSample(BaseModel):
     angleDegrees: float
     distanceMeters: float
     headYawDegrees: float
+
+class ObjectSighting(BaseModel):
+    id: str
+    participantId: str
+    objectLabel: str
+    utterance: str
+    seenAt: datetime
+    x: float
+    y: float
+    z: float
+    placement: PlacementMethod
+    confidence: Optional[float] = None

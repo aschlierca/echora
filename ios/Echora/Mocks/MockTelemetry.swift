@@ -3,6 +3,7 @@ import os
 
 final class MockTelemetry: TelemetryReporting {
     private(set) var results: [RoundResult] = []
+    private(set) var sightings: [ObjectSighting] = []
     let pendingCount = 0
 
     private let logger = Logger(subsystem: "com.gwh.echora", category: "MockTelemetry")
@@ -21,6 +22,13 @@ final class MockTelemetry: TelemetryReporting {
 
     func ping() async -> Bool {
         return true
+    }
+
+    func reportSighting(_ sighting: ObjectSighting) async {
+        let alreadyStored = sightings.contains { $0.id == sighting.id }
+        if !alreadyStored {
+            sightings.append(sighting)
+        }
     }
 
     /// Same rules as the backend (CONTRACT Part 5).
