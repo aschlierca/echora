@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -28,3 +28,61 @@ async def test_tiger_client_creates_pool_from_dsn():
         timeout=10,
         command_timeout=30,
     )
+
+
+@pytest.mark.asyncio
+async def test_aggregate_stats_reads_camelcase_keys():
+    """Regression: unquoted aliases are folded to lowercase by Postgres,
+    so r["echoraRounds"] raised KeyError on a real database."""
+    conn = AsyncMock()
+    conn.fetch.return_value = [
+        {
+            "participants": 3,
+            "echoraRounds": 5,
+            "medianEchoraSeconds": 6.5,
+            "meanEchoraSeconds": 7.0,
+        }
+    ]
+    pool = MagicMock()
+    pool.acquire.return_value.__aenter__.return_value = conn
+    client = TigerClient(dsn="postgresql://test")
+    client._pool = pool
+
+    stats = await client.aggregate_stats()
+    emitted_sql = conn.fetch.await_args.args[0]
+
+    assert emitted_sql.count('AS "echoraRounds"') == 1
+    assert emitted_sql.count('AS "medianEchoraSeconds"') == 1
+    assert emitted_sql.count('AS "meanEchoraSeconds"') == 1
+    assert stats == {
+        "participants": 3,
+        "echoraRounds": 5,
+        "medianEchoraSeconds": 6.5,
+        "meanEchoraSeconds": 7.0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_list_rounds_selects_quoted_camelcase_columns():
+    """list_rounds dicts feed the camelCase API directly, so the SELECT
+    must use quoted identifiers to survive Postgres case folding."""
+    conn = AsyncMock()
+    conn.fetch.return_value = []
+    pool = MagicMock()
+    pool.acquire.return_value.__aenter__.return_value = conn
+    client = TigerClient(dsn="postgresql://test")
+    client._pool = pool
+
+    await client.list_rounds()
+    emitted_sql = conn.fetch.await_args.args[0]
+
+    for column in (
+        '"participantId"',
+        '"objectLabel"',
+        '"durationSeconds"',
+        '"isPractice"',
+        '"headTrackingUsed"',
+        '"startedAt"',
+        '"appVersion"',
+    ):
+        assert column in emitted_sql
