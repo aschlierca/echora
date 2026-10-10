@@ -29,12 +29,12 @@ python -m pytest tests/test_main.py -q
 python -m pytest -k stats -q
 ```
 
-The optional `test_db.py` script checks a real PostgreSQL connection. It loads
+The optional `check_db.py` script checks a real PostgreSQL connection. It loads
 `backend/.env`, so set `DATABASE_URL` there or in the environment before
 running it:
 
 ```sh
-python test_db.py
+python check_db.py
 ```
 
 ### 4.8 Moon: Backend (`backend/`)

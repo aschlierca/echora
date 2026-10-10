@@ -26,12 +26,12 @@ final class TelemetryClient: TelemetryReporting {
             .first ?? FileManager.default.temporaryDirectory
         self.pendingDirectory = docs.appendingPathComponent("pending_rounds")
         self.pendingSamplesDirectory = docs.appendingPathComponent("pending_samples")
-        createDirectoryIfNeeded(at: pendingDirectory)
-        createDirectoryIfNeeded(at: pendingSamplesDirectory)
         self.encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         self.decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+        createDirectoryIfNeeded(at: pendingDirectory)
+        createDirectoryIfNeeded(at: pendingSamplesDirectory)
 
         Task {
             await retryPending()
@@ -81,7 +81,7 @@ final class TelemetryClient: TelemetryReporting {
         let roundId = first.roundId
         await retryPending()
         guard !(await send(samples)) else { return }
-        queuePending(samples, roundId: roundId)
+        queuePending(samples, roundId: roundId.uuidString)
     }
 
     private func queuePending(_ result: RoundResult) {
