@@ -2,15 +2,21 @@ import asyncpg
 from app.config import DATABASE_URL
 
 class TigerClient:
-    def __init__(self, dsn: str = DATABASE_URL):
-        self.dsn = dsn
+    def __init__(self, dsn: str | None = None):
+        self.dsn = dsn if dsn is not None else DATABASE_URL
         self._pool = None
 
     async def _get_pool(self):
         if self._pool is None:
             if not self.dsn:
                 raise RuntimeError("DATABASE_URL not set")
-            self._pool = await asyncpg.create_pool(self.dsn, min_size=1, max_size=5)
+            self._pool = await asyncpg.create_pool(
+                self.dsn,
+                min_size=1,
+                max_size=5,
+                timeout=10,
+                command_timeout=30,
+            )
         return self._pool
 
     async def close(self):
@@ -22,7 +28,7 @@ class TigerClient:
         async with pool.acquire() as conn:
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS public.rounds (
-                    id UUID PRIMARY KEY,
+                    id UUID NOT NULL,
                     participantId TEXT,
                     mode TEXT,
                     objectLabel TEXT,
@@ -31,7 +37,7 @@ class TigerClient:
                     isPractice BOOLEAN,
                     headTrackingUsed BOOLEAN,
                     placement TEXT,
-                    startedAt TIMESTAMPTZ,
+                    startedAt TIMESTAMPTZ NOT NULL,
                     appVersion TEXT
                 );
             """)
@@ -126,6 +132,10 @@ class TigerClient:
     async def ingest_samples(self, round_id: str, samples: list[dict]) -> None:
         pool = await self._get_pool()
         async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM public.round_samples WHERE roundId = $1",
+                round_id,
+            )
             await conn.executemany("""
                 INSERT INTO public.round_samples (
                     roundId, secondsSinceStart, mode, angleDegrees, distanceMeters, headYawDegrees
