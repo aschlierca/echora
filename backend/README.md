@@ -1,5 +1,7 @@
 # Echora backend (owner: Moon)
 
+[![CI](https://github.com/tisya05/hack-knight-gwh/actions/workflows/ci.yml/badge.svg)](https://github.com/tisya05/hack-knight-gwh/actions/workflows/ci.yml)
+
 Not implemented yet. Moon builds this; the contract below is copied from
 `docs/CONTRACT.md` (that file wins if they ever disagree).
 
