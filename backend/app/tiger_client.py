@@ -74,6 +74,13 @@ class TigerClient:
                     END IF;
                 END$$;
             """)
+            # Drop the pre-fix PRIMARY KEY on id alone: Timescale refuses
+            # conversion while any unique constraint lacks the time column.
+            # Idempotency is preserved by UNIQUE (id, "startedAt") below.
+            # No-op on tables created after the fix (no such constraint).
+            await conn.execute("""
+                ALTER TABLE public.rounds DROP CONSTRAINT IF EXISTS rounds_pkey;
+            """)
             # Convert to a hypertable. Single 'schema.table' relation arg;
             # a three-arg ('public','rounds','startedAt') call never matched
             # the Timescale signature and failed silently. Warn loudly now.
