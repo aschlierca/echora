@@ -28,10 +28,15 @@ One problem the merge does not show on its own: see "Open issues", item 1.
 | 3 | #41 | `seoyeon/elevenlabs` (`9671647`) | `843928d` | none | 181 pass |
 | 4 | #34 | `tisya/object-memory` (`d3e07fc`) | `d943e22` | none | 196 pass |
 | 5 | #35 | `tisya/ar-recovery` (`048ee64`) | `b88edfe` | **2**, see below | 200 pass |
+| 3b | #41 | `seoyeon/elevenlabs` again (`916c6b5`) | `34d8d46` | none | 200 pass |
 
 Steps 1 to 5 were each checked with `xcodegen generate`, then the full
 `xcodebuild -scheme Echora ... test` run on an iPhone 16 simulator. Step 0 is from running the two
 audio test classes on `main`. Simulator only. Nothing in this branch has been run on a phone.
+
+Step 3b: after the rehearsal, #41 gained one commit (the 15 voice clips regenerated with a female
+voice, plus the script default and a doc line). It was merged again on top so this branch matches
+the PR's current head. Audio files and two text files only; no code changed.
 
 ## Why this order
 
