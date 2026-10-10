@@ -34,10 +34,12 @@ final class VoiceCommandListener: VoiceCommandListening, @unchecked Sendable {
     /// settling for the best partial transcript.
     static let finalResultGraceSeconds: TimeInterval = 1.0
 
-    /// Words the recognizer should favor: the objects we expect and the voice commands.
+    /// Words the recognizer should favor: the objects we expect, the voice commands,
+    /// and the answers to "want to navigate?" (CONTRACT 4.11).
     static var contextualStrings: [String] {
         let commands = ["calibrate", "recalibrate", "recenter", "found", "found it", "got it"]
-        return Config.knownObjects + commands
+        let answers = ["yes", "yeah", "yep", "sure", "okay", "go", "navigate", "no", "nope", "nah", "cancel"]
+        return Config.knownObjects + commands + answers
     }
 
     var onPartialTranscript: ((String) -> Void)?

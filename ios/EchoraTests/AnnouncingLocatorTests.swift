@@ -16,15 +16,18 @@ private final class ScriptedLocator: ObjectLocator {
     }
 }
 
-/// Records what was said, and lets a test look at the app while it is being said.
+/// Records which lines were played, and lets a test look at the app while one is playing.
 @MainActor
-private final class RecordingAnnouncer: SpokenAnnouncing {
-    private(set) var spoken: [String] = []
-    var onSpeak: (() -> Void)?
+private final class RecordingPrompts: VoicePromptPlaying {
+    private(set) var played: [VoicePrompt] = []
+    var onPlay: (() -> Void)?
 
-    func speak(_ text: String) async {
-        onSpeak?()
-        spoken.append(text)
+    func play(_ prompt: VoicePrompt) async {
+        onPlay?()
+        played.append(prompt)
+    }
+
+    nonisolated func stop() {
     }
 }
 
@@ -65,21 +68,21 @@ final class AnnouncingLocatorTests: XCTestCase {
         )
     }
 
-    func testSaysItemFoundAndReturnsTheDetection() async throws {
-        let announcer = RecordingAnnouncer()
-        let locator = AnnouncingLocator(wrapping: ScriptedLocator(), announcer: announcer)
+    func testPlaysFoundNavigatingAndReturnsTheDetection() async throws {
+        let prompts = RecordingPrompts()
+        let locator = AnnouncingLocator(wrapping: ScriptedLocator(), prompts: prompts)
 
         let detection = try await locator.locate(utterance: "where's my mug", in: Self.makeSnapshot())
 
         XCTAssertEqual(detection.label, "mug")
-        XCTAssertEqual(announcer.spoken, ["Item found."])
+        XCTAssertEqual(prompts.played, [.foundNavigating])
     }
 
-    func testSaysPleaseTurnWhenTheObjectIsNotSeen() async {
+    func testPlaysNotFoundTurnWhenTheObjectIsNotSeen() async {
         let wrapped = ScriptedLocator()
         wrapped.error = EchoraError.objectNotFound("mug")
-        let announcer = RecordingAnnouncer()
-        let locator = AnnouncingLocator(wrapping: wrapped, announcer: announcer)
+        let prompts = RecordingPrompts()
+        let locator = AnnouncingLocator(wrapping: wrapped, prompts: prompts)
 
         do {
             _ = try await locator.locate(utterance: "mug", in: Self.makeSnapshot())
@@ -87,7 +90,7 @@ final class AnnouncingLocatorTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? EchoraError, .objectNotFound("mug"))
         }
-        XCTAssertEqual(announcer.spoken, ["Object not found. Please turn."])
+        XCTAssertEqual(prompts.played, [.notFoundTurn])
     }
 
     func testOtherFailuresStaySilent() async {
@@ -95,8 +98,8 @@ final class AnnouncingLocatorTests: XCTestCase {
         for failure in failures {
             let wrapped = ScriptedLocator()
             wrapped.error = failure
-            let announcer = RecordingAnnouncer()
-            let locator = AnnouncingLocator(wrapping: wrapped, announcer: announcer)
+            let prompts = RecordingPrompts()
+            let locator = AnnouncingLocator(wrapping: wrapped, prompts: prompts)
 
             do {
                 _ = try await locator.locate(utterance: "mug", in: Self.makeSnapshot())
@@ -104,7 +107,7 @@ final class AnnouncingLocatorTests: XCTestCase {
             } catch {
                 XCTAssertEqual(error as? EchoraError, failure)
             }
-            XCTAssertTrue(announcer.spoken.isEmpty, "\(failure)")
+            XCTAssertTrue(prompts.played.isEmpty, "\(failure)")
         }
     }
 
@@ -139,12 +142,12 @@ final class AnnouncingLocatorTests: XCTestCase {
 
     private func makeReadyCoordinator(
         locator: ScriptedLocator,
-        announcer: RecordingAnnouncer,
+        prompts: RecordingPrompts,
         backend: SpeechBackendStub
     ) async throws -> EchoraCoordinator {
         let environment = AppEnvironment(
             perception: MockPerceptionService(),
-            locator: AnnouncingLocator(wrapping: locator, announcer: announcer),
+            locator: AnnouncingLocator(wrapping: locator, prompts: prompts),
             headTracker: MockHeadTracker(),
             audio: MockSpatialAudio(),
             voice: VoiceCommandListener(backend: backend),
@@ -157,15 +160,15 @@ final class AnnouncingLocatorTests: XCTestCase {
         return coordinator
     }
 
-    /// "Item found" comes before the beeping: while it is spoken the round has not started.
+    /// "Item found, navigating" comes before the beeping: while it plays the round has not started.
     func testSpokenObjectIsFoundAnnouncedAndThenGuided() async throws {
         let locator = ScriptedLocator()
-        let announcer = RecordingAnnouncer()
+        let prompts = RecordingPrompts()
         let backend = SpeechBackendStub()
-        let coordinator = try await makeReadyCoordinator(locator: locator, announcer: announcer, backend: backend)
+        let coordinator = try await makeReadyCoordinator(locator: locator, prompts: prompts, backend: backend)
 
         var stateWhileSpeaking: EchoraState?
-        announcer.onSpeak = {
+        prompts.onPlay = {
             stateWhileSpeaking = coordinator.state
         }
 
@@ -178,7 +181,7 @@ final class AnnouncingLocatorTests: XCTestCase {
         try await Task.sleep(nanoseconds: 500_000_000)
 
         XCTAssertEqual(locator.utterances, ["where's my mug"])
-        XCTAssertEqual(announcer.spoken, ["Item found."])
+        XCTAssertEqual(prompts.played, [.foundNavigating])
         XCTAssertEqual(stateWhileSpeaking, .locating(utterance: "where's my mug"))
         guard case .guiding(let target, _) = coordinator.state else {
             XCTFail("Expected guiding, got \(coordinator.state)")
@@ -189,19 +192,19 @@ final class AnnouncingLocatorTests: XCTestCase {
         coordinator.onDisappear()
     }
 
-    func testObjectOutOfViewSaysPleaseTurnAndNoRoundStarts() async throws {
+    func testObjectOutOfViewPlaysNotFoundTurnAndNoRoundStarts() async throws {
         let locator = ScriptedLocator()
         locator.error = EchoraError.objectNotFound("mug")
-        let announcer = RecordingAnnouncer()
+        let prompts = RecordingPrompts()
         let backend = SpeechBackendStub()
-        let coordinator = try await makeReadyCoordinator(locator: locator, announcer: announcer, backend: backend)
+        let coordinator = try await makeReadyCoordinator(locator: locator, prompts: prompts, backend: backend)
 
         coordinator.beginVoiceRequest()
         backend.onResult?("find my mug", true)
         coordinator.endVoiceRequest()
         try await Task.sleep(nanoseconds: 500_000_000)
 
-        XCTAssertEqual(announcer.spoken, ["Object not found. Please turn."])
+        XCTAssertEqual(prompts.played, [.notFoundTurn])
         XCTAssertEqual(coordinator.state, .error(.objectNotFound("mug")))
         XCTAssertNil(coordinator.elapsedSeconds)
         coordinator.onDisappear()

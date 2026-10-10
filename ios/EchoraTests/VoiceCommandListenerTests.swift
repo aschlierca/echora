@@ -68,6 +68,9 @@ final class VoiceCommandListenerTests: XCTestCase {
         XCTAssertTrue(backend.contextualStrings.contains("mug"))
         XCTAssertTrue(backend.contextualStrings.contains("calibrate"))
         XCTAssertTrue(backend.contextualStrings.contains("found it"))
+        // Answers to "want to navigate?" (CONTRACT 4.11).
+        XCTAssertTrue(backend.contextualStrings.contains("yes"))
+        XCTAssertTrue(backend.contextualStrings.contains("nope"))
     }
 
     func testStartFailureIsThrown() {
