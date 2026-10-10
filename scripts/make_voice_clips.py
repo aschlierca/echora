@@ -31,7 +31,7 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file
 CLIPS_DIR = os.path.join(REPO_ROOT, "ios", "Echora", "Voice", "Clips")
 
 # One voice and one group of settings for every clip, so they sound like one speaker.
-DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"  # the voice used in ElevenLabs' own API examples
+DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"  # "Sarah", one of ElevenLabs' standard female voices
 DEFAULT_MODEL_ID = "eleven_flash_v2_5"     # lowest price per character; see ELEVENLABS.md for others
 SAMPLE_RATE = 24000                        # pcm_24000: raw 16-bit mono, available on every plan
 VOICE_SETTINGS = {
