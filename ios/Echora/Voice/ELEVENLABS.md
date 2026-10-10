@@ -57,8 +57,10 @@ Pages used for this setup:
    ```bash
    python3 scripts/make_voice_clips.py --list-voices
    ```
-   The default is `JBFqnCBsd6RMkjVDRZzb`, the voice in ElevenLabs' own API examples. To use another, add
-   `--voice <voice_id>` in the next step.
+   The default is `EXAVITQu4vr4xnSDxMaL` ("Sarah", one of ElevenLabs' standard female voices), which is
+   what the shipped clips use. To use another, add `--voice <voice_id>` in the next step.
+   `--list-voices` needs a key that is allowed to read voices; a key restricted to Text to Speech
+   answers 401. Voice IDs can also be copied from the Voices page of the ElevenLabs app.
 
 5. **Generate.**
    ```bash
