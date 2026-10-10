@@ -28,7 +28,7 @@ class TigerClient:
         async with pool.acquire() as conn:
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS public.rounds (
-                    id UUID PRIMARY KEY,
+                    id UUID NOT NULL,
                     participantId TEXT,
                     mode TEXT,
                     objectLabel TEXT,
@@ -37,7 +37,7 @@ class TigerClient:
                     isPractice BOOLEAN,
                     headTrackingUsed BOOLEAN,
                     placement TEXT,
-                    startedAt TIMESTAMPTZ,
+                    startedAt TIMESTAMPTZ NOT NULL,
                     appVersion TEXT
                 );
             """)
