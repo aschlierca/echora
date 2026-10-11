@@ -115,6 +115,50 @@ h2 {
   padding: 28px;
 }
 
+.sightings-card {
+  margin-top: 24px;
+  padding: 28px;
+}
+
+.sightings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sighting {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid #31405a;
+}
+
+.sighting:last-child {
+  border-bottom: none;
+}
+
+.sighting-label {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sighting-time {
+  margin-left: auto;
+  color: #6de0a2;
+  font-weight: 700;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+.sighting-meta {
+  color: #9daac1;
+  font-size: 0.9rem;
+}
+
 .section-heading {
   margin-bottom: 20px;
 }

@@ -14,9 +14,11 @@ python3 -m http.server 8080 --directory dashboard
 Open `http://localhost:8080/?api=http://localhost:8000` when the API is
 served separately. If the dashboard and API share an origin, omit `api`.
 
-The page polls `GET /api/stats` and `GET /api/rounds?limit=10` every 3 seconds.
+The page polls `GET /api/stats`, `GET /api/rounds?limit=10`, and
+`GET /api/sightings?limit=20` every 3 seconds.
 It shows the median Echora find time, participant count, successful recent
-rounds, connection status, and the required footnote:
+rounds, a "Last seen" panel with the newest sighting per object
+("blue mug, 3 min ago"), connection status, and the required footnote:
 "Informal booth testing, not a clinical study."
 
 The spoken-directions comparison was removed in contract v2.0, so this
