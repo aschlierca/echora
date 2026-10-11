@@ -130,15 +130,33 @@ final class MemoryFlowTests: XCTestCase {
         return coordinator
     }
 
-    private func settle() async throws {
-        try await Task.sleep(nanoseconds: 300_000_000)
+    /// Waits until the request has finished (not listening or locating), up to 5 s, then a
+    /// moment more for the voice line that follows. A fixed 0.3 s was too short on CI.
+    private func settle(_ coordinator: EchoraCoordinator) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            try await Task.sleep(nanoseconds: 50_000_000)
+            if !Self.isBusy(coordinator.state) {
+                break
+            }
+        }
+        try await Task.sleep(nanoseconds: 150_000_000)
+    }
+
+    private static func isBusy(_ state: EchoraState) -> Bool {
+        switch state {
+        case .listening, .locating:
+            return true
+        default:
+            return false
+        }
     }
 
     private func say(_ transcript: String, to coordinator: EchoraCoordinator) async throws {
         voice.transcript = transcript
         coordinator.beginVoiceRequest()
         coordinator.endVoiceRequest()
-        try await settle()
+        try await settle(coordinator)
     }
 
     /// Finds the mug once, ends that round, then the mug goes out of view.
@@ -146,7 +164,7 @@ final class MemoryFlowTests: XCTestCase {
         let coordinator = try await makeReadyCoordinator()
         locator.visible = ["mug"]
         coordinator.submitTypedRequest("where's my mug")
-        try await settle()
+        try await settle(coordinator)
         guard case .guiding = coordinator.state else {
             XCTFail("expected guiding, got \(coordinator.state)")
             return coordinator
@@ -165,7 +183,7 @@ final class MemoryFlowTests: XCTestCase {
     func testNotFoundAndNothingRememberedSaysPleaseTurn() async throws {
         let coordinator = try await makeReadyCoordinator()
         coordinator.submitTypedRequest("where's my phone")
-        try await settle()
+        try await settle(coordinator)
 
         guard case .error(.objectNotFound) = coordinator.state else {
             XCTFail("expected objectNotFound, got \(coordinator.state)")
@@ -179,7 +197,7 @@ final class MemoryFlowTests: XCTestCase {
     func testNotFoundButRememberedOffersTheSpot() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         XCTAssertEqual(coordinator.state, .ready)
         XCTAssertEqual(coordinator.memoryOffer?.objectLabel, "blue mug")
@@ -191,7 +209,7 @@ final class MemoryFlowTests: XCTestCase {
     func testSayingYesGuidesToTheRememberedSpot() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         try await say("yes", to: coordinator)
 
@@ -210,7 +228,7 @@ final class MemoryFlowTests: XCTestCase {
     func testSayingNoSaysOkayAndStaysReady() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         try await say("no", to: coordinator)
 
@@ -223,10 +241,10 @@ final class MemoryFlowTests: XCTestCase {
     func testOperatorButtonsAnswerToo() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         coordinator.answerMemoryOffer(accept: true)
-        try await settle()
+        try await settle(coordinator)
 
         guard case .guiding = coordinator.state else {
             XCTFail("expected guiding, got \(coordinator.state)")
@@ -238,10 +256,10 @@ final class MemoryFlowTests: XCTestCase {
     func testTypedYesAnswersToo() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         coordinator.submitTypedRequest("yes")
-        try await settle()
+        try await settle(coordinator)
 
         guard case .guiding = coordinator.state else {
             XCTFail("expected guiding, got \(coordinator.state)")
@@ -254,7 +272,7 @@ final class MemoryFlowTests: XCTestCase {
     func testAnotherRequestDropsTheOffer() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
         XCTAssertNotNil(coordinator.memoryOffer)
 
         try await say("where are my keys", to: coordinator)
@@ -267,13 +285,13 @@ final class MemoryFlowTests: XCTestCase {
     func testCancelDropsTheOffer() async throws {
         let coordinator = try await makeCoordinatorThatSawTheMug()
         coordinator.submitTypedRequest("mug")
-        try await settle()
+        try await settle(coordinator)
 
         coordinator.cancel()
         XCTAssertNil(coordinator.memoryOffer)
 
         coordinator.answerMemoryOffer(accept: true)
-        try await settle()
+        try await settle(coordinator)
         XCTAssertEqual(coordinator.state, .ready)
         coordinator.onDisappear()
     }

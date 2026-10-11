@@ -97,13 +97,13 @@ final class GeminiFallbackTests: XCTestCase {
     private let backupFoundBody = #"{"candidates":[{"content":{"parts":[{"text":"{\"found\":true,\"label\":\"cup\",\"box_2d\":[100,200,300,400]}"}]}}]}"#
     private let notFoundBody = #"{"candidates":[{"content":{"parts":[{"text":"{\"found\":false,\"label\":\"mug\",\"box_2d\":[],\"reason\":\"not visible\"}"}]}}]}"#
 
-    /// Scaled-down timings: race after 0.3 s, give up after 1.5 s.
-    private func makeLocator() -> GeminiLocator {
+    /// Scaled-down timings by default: race after 0.3 s, give up after 1.5 s.
+    private func makeLocator(hedgeDelay: TimeInterval = 0.3, budget: TimeInterval = 1.5) -> GeminiLocator {
         GeminiLocator(
             apiKey: "test-key",
             models: [primary, backup],
-            hedgeDelay: 0.3,
-            budget: 1.5,
+            hedgeDelay: hedgeDelay,
+            budget: budget,
             protocolClasses: [StubURLProtocol.self]
         )
     }
@@ -159,10 +159,12 @@ final class GeminiFallbackTests: XCTestCase {
         ]
         let started = Date()
 
-        let detection = try await makeLocator().locate(utterance: "mug", in: makeSnapshot())
+        // A long race timer, so "immediately" is unmistakable even on a slow CI machine.
+        let locator = makeLocator(hedgeDelay: 6, budget: 10)
+        let detection = try await locator.locate(utterance: "mug", in: makeSnapshot())
 
         XCTAssertEqual(detection.label, "cup")
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.25)   // didn't wait for the 0.3 s race timer
+        XCTAssertLessThan(Date().timeIntervalSince(started), 3.5)   // didn't wait for the 6 s race timer
     }
 
     func testRateLimitedPrimaryFallsBack() async throws {
