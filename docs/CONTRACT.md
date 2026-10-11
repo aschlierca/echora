@@ -570,7 +570,7 @@ enum RayMath {
     static func intersectHorizontalPlane(ray: Ray, planeY: Float) -> SIMD3<Float>?
 
     /// LiDAR path. Samples depth around the point and unprojects to world space.
-    /// Returns nil if too few confident samples or depth outside 0.1...3.0 m.
+    /// Returns nil if too few confident samples or depth outside 0.1...5.0 m.
     static func worldPointFromDepth(uprightPoint: NormalizedPoint, snapshot: Snapshot) -> SIMD3<Float>?
 }
 
@@ -746,7 +746,7 @@ Placement (`place(_:from:)`):
 
 0. LiDAR first, if `snapshot.depth != nil`. Use `box.center` (the object itself, not its base):
    - Map the upright point to sensor normalized with `ImageSpace`, then to depth pixels: `dx = sensor.x * depth.width`, `dy = sensor.y * depth.height`. The depth map is aligned with `capturedImage`, just lower resolution.
-   - Sample a 7x7 patch around (dx, dy). Keep samples with confidence >= 1 (medium) and depth in 0.1...3.0 m. Need at least 8 valid samples, else skip to step 1.
+   - Sample a 7x7 patch around (dx, dy). Keep samples with confidence >= 1 (medium) and depth in 0.1...5.0 m (3.0 before the LiDAR range change). Need at least 8 valid samples, else skip to step 1.
    - Take the 30th percentile, not the median. The object is in front of the table, so the closer values belong to the object. This stops thin objects (keys, pens) from snapping to the table behind them.
    - Unproject with the snapshot intrinsics, using sensor PIXELS `px, py` (intrinsics match `capturedImage`, not the depth map):
      ```

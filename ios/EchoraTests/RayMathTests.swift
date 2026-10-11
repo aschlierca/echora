@@ -157,9 +157,16 @@ final class RayMathTests: XCTestCase {
     }
 
     func testDepthOutOfRangeIsNil() {
-        let tooFar = makeDepth(backgroundMeters: 5, objectMeters: 4)
+        let tooFar = makeDepth(backgroundMeters: 7, objectMeters: 6)
         let snapshot = makeSnapshot(depth: tooFar)
         XCTAssertNil(RayMath.worldPointFromDepth(uprightPoint: NormalizedPoint(x: 0.5, y: 0.5), snapshot: snapshot))
+    }
+
+    /// Asked for from ~4 m away: LiDAR now measures it instead of falling back to a guess.
+    func testDepthWorksOutToFourMeters() {
+        let snapshot = makeSnapshot(depth: makeDepth(backgroundMeters: 4.5, objectMeters: 4.0))
+        let point = RayMath.worldPointFromDepth(uprightPoint: NormalizedPoint(x: 0.5, y: 0.5), snapshot: snapshot)
+        XCTAssertEqual(point?.z ?? 0, -4.0, accuracy: 1e-4)
     }
 
     func testNoDepthIsNil() {
