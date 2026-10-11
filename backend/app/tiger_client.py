@@ -86,7 +86,7 @@ class TigerClient:
             # the Timescale signature and failed silently. Warn loudly now.
             try:
                 await conn.execute("""
-                    SELECT create_hypertable('public.rounds', 'startedAt', if_not_exists => TRUE);
+                    SELECT create_hypertable('public.rounds', 'startedAt', migrate_data => TRUE, if_not_exists => TRUE);
                 """)
             except Exception as exc:
                 logger.warning("rounds is a plain table, not a hypertable: %s", exc)
@@ -142,7 +142,7 @@ class TigerClient:
             """)
             try:
                 await conn.execute("""
-                    SELECT create_hypertable('public.round_samples', 'receivedAt', if_not_exists => TRUE);
+                    SELECT create_hypertable('public.round_samples', 'receivedAt', migrate_data => TRUE, if_not_exists => TRUE);
                 """)
             except Exception as exc:
                 logger.warning("round_samples is a plain table, not a hypertable: %s", exc)
@@ -165,7 +165,7 @@ class TigerClient:
             """)
             try:
                 await conn.execute("""
-                    SELECT create_hypertable('public.sightings', 'seenAt', if_not_exists => TRUE);
+                    SELECT create_hypertable('public.sightings', 'seenAt', migrate_data => TRUE, if_not_exists => TRUE);
                 """)
             except Exception as exc:
                 logger.warning("sightings is a plain table, not a hypertable: %s", exc)
