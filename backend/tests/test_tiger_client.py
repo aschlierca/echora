@@ -97,9 +97,9 @@ async def test_create_tables_uses_two_arg_hypertable_calls():
 
     statements = [call.args[0] for call in conn.execute.await_args_list]
     for expected in (
-        "create_hypertable('public.rounds', 'startedAt'",
-        "create_hypertable('public.round_samples', 'receivedAt'",
-        "create_hypertable('public.sightings', 'seenAt'",
+        "create_hypertable('public.rounds', 'startedAt', migrate_data => TRUE",
+        "create_hypertable('public.round_samples', 'receivedAt', migrate_data => TRUE",
+        "create_hypertable('public.sightings', 'seenAt', migrate_data => TRUE",
     ):
         assert any(expected in statement for statement in statements), expected
 
