@@ -102,3 +102,10 @@ def test_pages_are_served_and_the_api_still_wins(client):
     results = client.get("/results/")
     assert results.status_code == 200
     assert client.get("/health").json() == {"ok": True}
+
+
+def test_results_without_trailing_slash_redirects(client):
+    r = client.get("/results", follow_redirects=False)
+    assert r.status_code == 307
+    assert r.headers["location"] == "/results/"
+    assert client.get("/results").status_code == 200

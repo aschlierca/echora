@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI, Header, HTTPException, Query, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import CORS_ORIGIN, ECHORA_BACKEND_TOKEN
 from app.tiger_client import TigerClient
@@ -159,6 +159,14 @@ async def list_sightings(limit: int = Query(20, ge=1, le=100)):
 # /          live dashboard (live-dashboard/static, copied by scripts/sync_web_pages.sh)
 # /results/  results dashboard (dashboard/)
 _WEB = Path(__file__).resolve().parent / "web"
+
+
+@app.get("/results", include_in_schema=False)
+def results_without_slash():
+    # The mount below only matches /results/...; without this, /results fell through to 404.
+    return RedirectResponse(url="/results/", status_code=307)
+
+
 if (_WEB / "results").is_dir():
     app.mount("/results", StaticFiles(directory=_WEB / "results", html=True), name="results")
 if (_WEB / "live").is_dir():
