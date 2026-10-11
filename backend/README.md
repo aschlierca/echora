@@ -2,8 +2,6 @@
 
 [![CI](https://github.com/tisya05/hack-knight-gwh/actions/workflows/ci.yml/badge.svg)](https://github.com/tisya05/hack-knight-gwh/actions/workflows/ci.yml)
 
-Not implemented yet. Moon builds this; the contract below is copied from
-`docs/CONTRACT.md` (that file wins if they ever disagree).
 
 > **v1.5 (search trajectories):** the app can now upload per-round `RoundSample`s via `POST /api/rounds/{id}/samples`. Endpoint, JSON and storage plan are in `docs/CONTRACT.md` Part 5 and 4.8, which win over this copy.
 
