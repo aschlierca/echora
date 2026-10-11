@@ -288,6 +288,14 @@ Camera, LiDAR, head tracking, and spatial audio still need a physical-device smo
 
 ## Team
 
+<p align="center">
+  <img src=".github/readme/team-photo.jpg" width="900" alt="The Echora team at Hack Knight 2026: Qimin Wu, Tisya Singh, Miskatul Moon, and Seoyeon Cho">
+</p>
+
+<p align="center">
+  <em>From left: Qimin Wu, Tisya Singh, Miskatul Moon, and Seoyeon Cho.</em>
+</p>
+
 | Member | Focus |
 |---|---|
 | [Qimin Wu](https://github.com/qimin5) · `qimin5` | iOS UI/UX, accessibility, branding, and sound design |
