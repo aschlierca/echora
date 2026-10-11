@@ -14,7 +14,8 @@ enum RayMath {
     static let depthPatchRadius = 3                  // 7 x 7 patch
     static let minimumDepthSamples = 8
     static let minimumDepthConfidence: UInt8 = 1     // ARConfidenceLevel.medium
-    static let depthRangeMeters: ClosedRange<Float> = 0.1...3.0
+    /// iPhone LiDAR is rated to about 5 m (was 3 m: objects asked for from farther away fell back to guesses).
+    static let depthRangeMeters: ClosedRange<Float> = 0.1...5.0
     /// Closer values belong to the object, farther ones to the table behind it.
     static let depthPercentile: Float = 0.3
 
@@ -50,7 +51,7 @@ enum RayMath {
     }
 
     /// LiDAR path. Samples depth around the point and unprojects to world space.
-    /// Returns nil if too few confident samples or depth outside 0.1...3.0 m.
+    /// Returns nil if too few confident samples or depth outside 0.1...5.0 m.
     static func worldPointFromDepth(uprightPoint: NormalizedPoint, snapshot: Snapshot) -> SIMD3<Float>? {
         guard let depth = snapshot.depth else {
             return nil
